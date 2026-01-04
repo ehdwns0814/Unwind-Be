@@ -1,0 +1,30 @@
+---
+description: Rules for Logging, Monitoring, and Observability
+globs: **/*.java, src/main/resources/*.yml
+---
+# Logging & Observability Rules
+
+## Logging Strategy
+- **Framework**: Use SLF4J with Logback (Spring Boot default).
+- **Levels**:
+  - `DEBUG`: Detailed info for development (SQL queries, variable states).
+  - `INFO`: General application flow (startup, scheduled jobs, major actions).
+  - `WARN`: Unexpected situations that don't stop the system (recoverable errors).
+  - `ERROR`: Critical issues needing attention (exceptions, connection failures).
+- **Environment config**:
+  - **Local/Dev**: Set root level to `INFO`, package level to `DEBUG` where needed.
+  - **Prod**: Set root level to `WARN` or `ERROR`. Key business events can be `INFO`.
+
+## Security & Privacy
+- **Masking**: NEVER log sensitive data (passwords, JWT tokens, PII like phone numbers) in plain text.
+- **Sanitization**: Be careful when logging user input to prevent log injection.
+
+## Tracing
+- **MDC (Mapped Diagnostic Context)**: Use MDC to store request metadata.
+  - Add `requestId` (UUID) to MDC at the start of every request (via Filter/Interceptor).
+  - Include `userId` in MDC after authentication.
+  - Ensure MDC is cleared after request completion.
+
+## Format
+- Use structured logging (JSON) in production if shipping logs to ELK/Datadog.
+- Pattern example: `[%d{yyyy-MM-dd HH:mm:ss}] [%thread] %-5level %logger{36} - [%X{requestId}] %msg%n`

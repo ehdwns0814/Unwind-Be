@@ -1,0 +1,11 @@
+test
+{"sessionId":"debug-session","location":"FocusManager.swift:29","timestamp":1767451913604,"message":"FocusManager - init started","data":{},"hypothesisId":"B"}
+{"sessionId":"debug-session","timestamp":1767451913616,"message":"PenaltyManager - init finished","hypothesisId":"B","data":{"isPenaltyActive":false},"location":"PenaltyManager.swift:20"}
+{"sessionId":"debug-session","timestamp":1767451913615,"message":"FocusManager - init finished","hypothesisId":"B","data":{},"location":"FocusManager.swift:42"}
+{"sessionId":"debug-session","timestamp":1767451913616,"message":"PenaltyManager - init started","hypothesisId":"B","data":{},"location":"PenaltyManager.swift:15"}
+{"sessionId":"debug-session","timestamp":1767451913623,"message":"UnwindApp - body rendering","hypothesisId":"B","data":{},"location":"UnwindApp.swift:16"}
+{"location":"UnwindApp.swift:16","data":{},"hypothesisId":"B","timestamp":1767451913655,"sessionId":"debug-session","message":"UnwindApp - body rendering"}
+{"sessionId":"debug-session","message":"UnwindApp - onAppear","location":"UnwindApp.swift:24","data":{},"hypothesisId":"D","timestamp":1767451913993}
+{"sessionId":"debug-session","message":"ScreentimeManager - init started","location":"ScreentimeManager.swift:20","data":{},"hypothesisId":"B","timestamp":1767451913993}
+{"data":{},"timestamp":1767451913994,"sessionId":"debug-session","hypothesisId":"B","location":"ScreentimeManager.swift:24","message":"ScreentimeManager - init finished"}
+{"data":{},"sessionId":"debug-session","hypothesisId":"A","location":"ScreentimeManager.swift:41","message":"ScreentimeManager - updateAuthorizationStatus called","timestamp":1767451913994}

@@ -1,0 +1,32 @@
+---
+description: Security rules for Spring Security and JWT implementation
+globs: **/*.java
+---
+# Spring Security & JWT Rules
+
+## Authentication Architecture
+- **Stateless**: Configure `SessionCreationPolicy.STATELESS`.
+- **JWT**: Use JSON Web Tokens for authentication.
+  - **Access Token**: Short lifespan (e.g., 30 min).
+  - **Refresh Token**: Long lifespan (e.g., 7-14 days), stored securely (HttpOnly Cookie or secure DB).
+
+## Security Configuration
+- **FilterChain**: Explicitly define public vs protected endpoints.
+  - Public: `/api/auth/**`, `/api/docs/**`, `/swagger-ui/**`.
+  - Protected: All other API endpoints.
+- **Password Encoding**: Always use `BCryptPasswordEncoder` for storing passwords. NEVER store plain text passwords.
+
+## JWT Implementation
+- **Secret Key**: Load from environment variables (`application.yml`), never hardcode.
+- **Filter**: Implement a `JwtAuthenticationFilter` that runs before `UsernamePasswordAuthenticationFilter`.
+- **Validation**:
+  - Check signature validity.
+  - Check expiration.
+  - Check malformed/unsupported tokens.
+
+## User Details
+- Implement `UserDetailsService` to load user data from the database.
+- Use a custom `UserDetails` implementation if extra fields are needed, or map `User` entity to Spring's `User` object.
+
+## CORS
+- Configure CORS globally to allow requests from the specific client origins (e.g., iOS app scheme or dev localhost).

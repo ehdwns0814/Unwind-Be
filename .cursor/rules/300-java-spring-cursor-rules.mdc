@@ -1,0 +1,39 @@
+---
+description: Java Spring Boot Development Rules & Best Practices
+globs: **/*.java
+---
+# Java Spring Boot Development Rules
+
+## Architecture & Layering
+- **Layered Architecture**: Strictly follow `Controller` -> `Service` -> `Repository`.
+- **Dependency Direction**: Controllers must NOT depend on Repositories directly.
+- **DTO Usage**: 
+  - NEVER return JPA Entities directly from Controllers.
+  - Use DTOs (Data Transfer Objects) for all API requests and responses.
+  - Use Mappers (MapStruct or manual methods) to convert between Entity and DTO.
+
+## Coding Standards
+- **Lombok**: 
+  - Avoid `@Data` on Entities (it includes `equals`, `hashCode`, `toString` which can cause performance issues or infinite loops with lazy loading).
+  - Use `@Getter`, `@NoArgsConstructor(access = AccessLevel.PROTECTED)`, and `@ToString(exclude = "...")`.
+  - Use `@Builder` for object creation.
+- **Dependency Injection**: 
+  - Always use Constructor Injection (`@RequiredArgsConstructor`).
+  - Avoid `@Autowired` on fields.
+- **Null Safety**: 
+  - Use `Optional<T>` for return types that might be empty.
+  - Avoid returning `null` from methods.
+
+## Database & JPA
+- **Lazy Loading**: Set `fetch = FetchType.LAZY` for all `@ManyToOne` and `@OneToOne` relationships.
+- **Transactional**: 
+  - Use `@Transactional(readOnly = true)` at the class level for Services.
+  - Override with `@Transactional` for methods that modify data.
+
+## API & Controller
+- **Validation**: Use `jakarta.validation` (`@Valid`, `@NotNull`, etc.) in DTOs.
+- **Status Codes**: Return appropriate HTTP status codes (201 for create, 204 for no content, 404 for not found).
+
+## See also:
+- [302-jpa-querydsl-dynamic-query-rules.mdc](302-jpa-querydsl-dynamic-query-rules.mdc)
+- [307-api-design-exception-handling.mdc](307-api-design-exception-handling.mdc)

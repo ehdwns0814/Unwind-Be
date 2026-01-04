@@ -1,0 +1,40 @@
+---
+description: Standards for API Design, Response Formatting, and Global Exception Handling
+globs: **/*.java
+---
+# API Design & Exception Handling Rules
+
+## API Response Format
+- **Standard Wrapper**: All API responses must be wrapped in a standard generic class.
+  ```java
+  public record ApiResponse<T>(
+      boolean success,
+      T data,
+      ErrorResponse error
+  ) {}
+  ```
+- **Success**: Return `success: true` with `data`.
+- **Error**: Return `success: false` with `error` details (code, message), `data` should be null.
+
+## Exception Handling Strategy
+- **Global Handler**: Use `@RestControllerAdvice` to catch exceptions globally.
+- **Custom Exceptions**: Define custom exceptions (e.g., `BusinessException`, `EntityNotFoundException`) extending `RuntimeException`.
+- **ErrorCode Enum**: Maintain an `ErrorCode` enum containing HTTP status and error messages.
+  ```java
+  public enum ErrorCode {
+      USER_NOT_FOUND(404, "U001", "User not found"),
+      INVALID_INPUT(400, "C001", "Invalid input value");
+      // ...
+  }
+  ```
+- **Logging**: Log the full stack trace for 500 Server Errors, but only the message for expected business exceptions (4xx).
+
+## HTTP Status Codes
+- **200 OK**: Successful synchronous request.
+- **201 Created**: Resource successfully created (include `Location` header if possible).
+- **204 No Content**: Successful request with no body (e.g., delete).
+- **400 Bad Request**: Validation failure or invalid format.
+- **401 Unauthorized**: Missing or invalid authentication token.
+- **403 Forbidden**: Valid token but insufficient permissions.
+- **404 Not Found**: Resource does not exist.
+- **500 Internal Server Error**: Unhandled server exceptions.

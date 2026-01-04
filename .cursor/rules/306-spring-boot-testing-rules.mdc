@@ -1,0 +1,39 @@
+---
+description: Rules for Spring Boot Testing (Unit, Integration, Testcontainers)
+globs: src/test/**/*.java
+---
+# Spring Boot Testing Rules
+
+## General Principles
+- **Goal**: Ensure logic correctness and prevent regressions.
+- **Scope**: Cover critical business logic, edge cases, and complex queries.
+- **Library**: Use JUnit 5 and Mockito.
+
+## Naming Conventions
+- **Test Classes**: `TargetClass` + `Test` (e.g., `UserServiceTest`).
+- **Test Methods**: `should_ExpectedBehavior_When_State` or `methodName_State_ExpectedBehavior`.
+  - Example: `should_ThrowException_When_UserNotFound()`
+  - Example: `createUser_ValidInput_ReturnsUser()`
+
+## Unit Testing (Service/Domain Layer)
+- **Isolation**: Test business logic without loading the Spring Context context when possible.
+- **Mocking**: Use `@ExtendWith(MockitoExtension.class)` and `@Mock` / `@InjectMocks`.
+- **Assertions**: Use AssertJ (`assertThat(...)`) for readable assertions.
+
+## Integration Testing (Repository/Controller Layer)
+- **Annotation**: Use `@SpringBootTest` for full context or `@WebMvcTest` for controllers, `@DataJpaTest` for repositories.
+- **Testcontainers**: Use Testcontainers for real external dependencies (MySQL, Redis, Kafka) instead of H2 in-memory DB if possible, to match production behavior.
+- **Transactional**: Tests should roll back transactions automatically (default in `@DataJpaTest`).
+
+## Structure
+- **Given-When-Then**: Structure test bodies using the BDD pattern.
+  ```java
+  // Given
+  UserDto userDto = ...;
+  
+  // When
+  User result = userService.create(userDto);
+  
+  // Then
+  assertThat(result).isNotNull();
+  ```

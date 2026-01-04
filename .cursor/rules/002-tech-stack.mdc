@@ -1,0 +1,36 @@
+---
+description: Defines the technical stack for the Unwind-Be Backend project
+globs: 
+---
+# Technical Stack
+Referenced in: [001-project-overview.mdc](001-project-overview.mdc)
+
+## Core Runtime
+- **Language**: Java 21 (LTS)
+- **Framework**: Spring Boot 3.x
+- **Build Tool**: Gradle (Groovy DSL)
+
+## Persistence
+- **Database**: MySQL 8.0 or PostgreSQL 15 (Targeting relational DB)
+- **ORM**: Spring Data JPA (Hibernate)
+- **Dynamic Query**: QueryDSL 5.x
+- **Migrations**: Flyway or Liquibase (Recommended for schema management)
+
+## Caching & Messaging
+- **Caching**: Redis (Spring Data Redis)
+- **Message Queue**: Apache Kafka (Spring Kafka) for event-driven architecture and Saga pattern
+
+## Security
+- **Authentication**: Spring Security 6.x
+- **Token**: JWT (JSON Web Token) for stateless authentication
+- **Encryption**: BCrypt for password hashing
+
+## Documentation
+- **API Docs**: SpringDoc OpenAPI (Swagger UI)
+
+## Testing
+- **Unit**: JUnit 5, Mockito
+- **Integration**: Spring Boot Test, Testcontainers (for DB/Redis/Kafka)
+
+## External Services
+- **AI/ML Integration**: OpenAI API / Hugging Face API (via RestClient/WebClient)
