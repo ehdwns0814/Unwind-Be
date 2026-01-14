@@ -58,7 +58,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
      * @param userId 사용자 ID
      * @return 스케줄 목록
      */
-    List<Schedule> findByUserId(Long userId);
+    @Query("SELECT s FROM Schedule s WHERE s.user.id = :userId")
+    List<Schedule> findByUserId(@Param("userId") Long userId);
 
     /**
      * 사용자별 스케줄 목록 조회 (페이징)
@@ -67,7 +68,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
      * @param pageable 페이징 정보
      * @return 페이징된 스케줄 목록
      */
-    Page<Schedule> findByUserId(Long userId, Pageable pageable);
+    @Query("SELECT s FROM Schedule s WHERE s.user.id = :userId")
+    Page<Schedule> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
     /**
      * 사용자의 스케줄 개수 조회
@@ -75,7 +77,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
      * @param userId 사용자 ID
      * @return 스케줄 개수
      */
-    long countByUserId(Long userId);
+    @Query("SELECT COUNT(s) FROM Schedule s WHERE s.user.id = :userId")
+    long countByUserId(@Param("userId") Long userId);
 
     // ========== 벌크 조회 (동기화용) ==========
 
