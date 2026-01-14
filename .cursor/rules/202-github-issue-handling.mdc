@@ -73,6 +73,16 @@ gh issue create \
 - Verify project item IDs after adding issues
 - Use `gh project item-list` to get item IDs for date setting
 
+### 6. Completed Issue Management
+- **Move completed issues**: When a Pull Request is merged to main branch, move the corresponding issue file to `tasks/github-issues/finished-issues/` directory
+- **File naming**: Issue files follow the pattern `issue-XXX-*.md` where XXX is the issue number
+- **Move command**: Use `mv` command to move completed issue files
+  ```bash
+  mv tasks/github-issues/issue-XXX-*.md tasks/github-issues/finished-issues/
+  ```
+- **Verification**: After moving, verify the file exists in `finished-issues/` directory
+- **Purpose**: Keep the main `tasks/github-issues/` directory clean by archiving completed issues
+
 ## Examples
 
 <example what="Creating single issue">
