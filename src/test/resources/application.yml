@@ -33,6 +33,12 @@ spring:
       host: localhost
       port: 6379
 
+# ========== JWT Configuration for Test ==========
+jwt:
+  secret: test-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm
+  access-token-expiration: 1800
+  refresh-token-expiration: 604800
+
 # ========== Logging ==========
 logging:
   level:
