@@ -27,3 +27,4 @@ CREATE TABLE users (
 -- 인덱스는 UNIQUE CONSTRAINT에 의해 자동 생성됨
 -- uk_users_email: email 컬럼에 대한 Unique Index
 
+

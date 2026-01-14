@@ -17,3 +17,4 @@ public class JpaAuditingConfig {
     // JPA Auditing 활성화만 담당하므로 별도 Bean 정의 없음
 }
 
+
