@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
  *   <li>사용자 에러: U001, U002, ...</li>
  * </ul>
  * 
- * @see ErrorResponse
+ * @see com.wombat.screenlock.unwind_be.global.response.ErrorResponse
  */
 @Getter
 @RequiredArgsConstructor
@@ -42,7 +42,13 @@ public enum ErrorCode {
     /**
      * 유효하지 않거나 만료된 Refresh Token
      */
-    INVALID_REFRESH_TOKEN(401, "A003", "유효하지 않거나 만료된 토큰입니다");
+    INVALID_REFRESH_TOKEN(401, "A003", "유효하지 않거나 만료된 토큰입니다"),
+
+    // ========== 서버 에러 (Server) ==========
+    /**
+     * 내부 서버 오류
+     */
+    INTERNAL_SERVER_ERROR(500, "S001", "내부 서버 오류가 발생했습니다");
 
     /**
      * HTTP 상태 코드

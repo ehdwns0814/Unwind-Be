@@ -78,5 +78,17 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> error(ErrorCode errorCode) {
         return new ApiResponse<>(false, null, ErrorResponse.of(errorCode));
     }
+    
+    /**
+     * 커스텀 에러 응답 생성
+     * 
+     * @param <T> 응답 데이터 타입
+     * @param code 에러 코드
+     * @param message 에러 메시지
+     * @return ApiResponse 인스턴스
+     */
+    public static <T> ApiResponse<T> error(String code, String message) {
+        return new ApiResponse<>(false, null, ErrorResponse.of(code, message));
+    }
 }
 

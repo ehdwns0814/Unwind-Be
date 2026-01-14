@@ -4,6 +4,7 @@ import com.wombat.screenlock.unwind_be.api.auth.dto.LoginRequest;
 import com.wombat.screenlock.unwind_be.api.auth.dto.RefreshRequest;
 import com.wombat.screenlock.unwind_be.api.auth.dto.SignUpRequest;
 import com.wombat.screenlock.unwind_be.api.auth.dto.TokenResponse;
+import com.wombat.screenlock.unwind_be.application.auth.AuthService;
 import com.wombat.screenlock.unwind_be.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    // TODO: BE-003에서 AuthService 주입
-    // private final AuthService authService;
+    private final AuthService authService;
 
     /**
      * 회원가입 API
@@ -68,12 +68,9 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<TokenResponse>> signup(
             @Valid @RequestBody SignUpRequest request) {
-        // TODO: BE-003에서 AuthService.signup(request) 호출
-        // TokenResponse tokenResponse = authService.signup(request);
-        // return ResponseEntity.status(HttpStatus.CREATED)
-        //     .body(ApiResponse.success(tokenResponse));
-        
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        TokenResponse tokenResponse = authService.signup(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(tokenResponse));
     }
 
     /**
@@ -100,11 +97,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<TokenResponse>> login(
             @Valid @RequestBody LoginRequest request) {
-        // TODO: BE-003에서 AuthService.login(request) 호출
-        // TokenResponse tokenResponse = authService.login(request);
-        // return ResponseEntity.ok(ApiResponse.success(tokenResponse));
-        
-        return ResponseEntity.ok().build();
+        TokenResponse tokenResponse = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success(tokenResponse));
     }
 
     /**
@@ -130,11 +124,8 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> refresh(
             @Valid @RequestBody RefreshRequest request) {
-        // TODO: BE-003에서 AuthService.refresh(request) 호출
-        // TokenResponse tokenResponse = authService.refresh(request);
-        // return ResponseEntity.ok(ApiResponse.success(tokenResponse));
-        
-        return ResponseEntity.ok().build();
+        TokenResponse tokenResponse = authService.refresh(request);
+        return ResponseEntity.ok(ApiResponse.success(tokenResponse));
     }
 }
 
