@@ -51,5 +51,16 @@ public class ErrorResponse {
     public static ErrorResponse of(ErrorCode errorCode) {
         return new ErrorResponse(errorCode.getCode(), errorCode.getMessage());
     }
+    
+    /**
+     * 커스텀 메시지로 ErrorResponse 생성
+     * 
+     * @param code 에러 코드
+     * @param message 에러 메시지
+     * @return ErrorResponse 인스턴스
+     */
+    public static ErrorResponse of(String code, String message) {
+        return new ErrorResponse(code, message);
+    }
 }
 
