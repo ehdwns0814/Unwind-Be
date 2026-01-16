@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -177,6 +179,107 @@ class ScheduleServiceTest {
 
             // Then - save 호출 시 전달된 Schedule 엔티티 검증
             verify(scheduleRepository).save(any(Schedule.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("getSchedules 메서드")
+    class GetSchedules {
+
+        @Test
+        @DisplayName("전체 목록 조회 - 사용자의 모든 스케줄 반환")
+        void should_ReturnAllSchedules_When_UserHasSchedules() {
+            // Given
+            Schedule schedule1 = Schedule.builder()
+                    .clientId("client-1")
+                    .name("스케줄 1")
+                    .duration(30)
+                    .user(testUser)
+                    .build();
+            Schedule schedule2 = Schedule.builder()
+                    .clientId("client-2")
+                    .name("스케줄 2")
+                    .duration(60)
+                    .user(testUser)
+                    .build();
+            
+            given(scheduleRepository.findByUserId(VALID_USER_ID))
+                    .willReturn(List.of(schedule1, schedule2));
+
+            // When
+            List<ScheduleResponse> result = scheduleService.getSchedules(VALID_USER_ID);
+
+            // Then
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).name()).isEqualTo("스케줄 1");
+            assertThat(result.get(1).name()).isEqualTo("스케줄 2");
+            
+            verify(scheduleRepository).findByUserId(VALID_USER_ID);
+        }
+
+        @Test
+        @DisplayName("빈 목록 - 스케줄이 없는 경우")
+        void should_ReturnEmptyList_When_NoSchedules() {
+            // Given
+            given(scheduleRepository.findByUserId(VALID_USER_ID))
+                    .willReturn(Collections.emptyList());
+
+            // When
+            List<ScheduleResponse> result = scheduleService.getSchedules(VALID_USER_ID);
+
+            // Then
+            assertThat(result).isEmpty();
+            
+            verify(scheduleRepository).findByUserId(VALID_USER_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("getSchedulesSince 메서드")
+    class GetSchedulesSince {
+
+        @Test
+        @DisplayName("증분 동기화 - lastSyncTime 이후 변경분만 반환")
+        void should_ReturnModifiedSchedules_When_LastSyncTimeProvided() {
+            // Given
+            LocalDateTime lastSyncTime = LocalDateTime.of(2026, 2, 9, 10, 0, 0);
+            
+            Schedule modifiedSchedule = Schedule.builder()
+                    .clientId("client-modified")
+                    .name("수정된 스케줄")
+                    .duration(45)
+                    .user(testUser)
+                    .build();
+            
+            given(scheduleRepository.findByUserIdAndUpdatedAtAfter(VALID_USER_ID, lastSyncTime))
+                    .willReturn(List.of(modifiedSchedule));
+
+            // When
+            List<ScheduleResponse> result = scheduleService.getSchedulesSince(VALID_USER_ID, lastSyncTime);
+
+            // Then
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).name()).isEqualTo("수정된 스케줄");
+            
+            verify(scheduleRepository).findByUserIdAndUpdatedAtAfter(VALID_USER_ID, lastSyncTime);
+        }
+
+        @Test
+        @DisplayName("변경 없음 - lastSyncTime 이후 변경분이 없는 경우")
+        void should_ReturnEmptyList_When_NoChangesAfterLastSyncTime() {
+            // Given
+            LocalDateTime lastSyncTime = LocalDateTime.of(2026, 2, 9, 10, 0, 0);
+            
+            given(scheduleRepository.findByUserIdAndUpdatedAtAfter(VALID_USER_ID, lastSyncTime))
+                    .willReturn(Collections.emptyList());
+
+            // When
+            List<ScheduleResponse> result = scheduleService.getSchedulesSince(VALID_USER_ID, lastSyncTime);
+
+            // Then
+            assertThat(result).isEmpty();
+            
+            verify(scheduleRepository).findByUserIdAndUpdatedAtAfter(VALID_USER_ID, lastSyncTime);
         }
     }
 }
