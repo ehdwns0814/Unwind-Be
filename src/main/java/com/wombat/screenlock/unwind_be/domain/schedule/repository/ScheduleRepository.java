@@ -105,5 +105,21 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
      */
     @Query("SELECT s FROM Schedule s JOIN FETCH s.user WHERE s.user.id = :userId")
     List<Schedule> findByUserIdWithUser(@Param("userId") Long userId);
+
+    // ========== 동기화용 조회 (BE-008) ==========
+
+    /**
+     * 사용자 ID와 마지막 동기화 시간 이후 변경된 스케줄 조회
+     * 
+     * <p>iOS 앱 증분 동기화 시 사용. updatedAt 기준으로 변경분만 조회합니다.</p>
+     * 
+     * @param userId 사용자 ID
+     * @param lastSyncTime 마지막 동기화 시간
+     * @return 변경된 스케줄 목록
+     */
+    @Query("SELECT s FROM Schedule s WHERE s.user.id = :userId AND s.updatedAt > :lastSyncTime ORDER BY s.updatedAt ASC")
+    List<Schedule> findByUserIdAndUpdatedAtAfter(
+            @Param("userId") Long userId, 
+            @Param("lastSyncTime") java.time.LocalDateTime lastSyncTime);
 }
 
