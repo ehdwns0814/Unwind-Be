@@ -55,6 +55,11 @@ public enum ErrorCode {
      */
     SCHEDULE_NOT_FOUND(404, "SCH002", "스케줄을 찾을 수 없습니다"),
 
+    /**
+     * 스케줄 접근 권한 없음 (타인의 스케줄)
+     */
+    SCHEDULE_ACCESS_DENIED(403, "SCH003", "해당 스케줄에 대한 권한이 없습니다"),
+
     // ========== 사용자 에러 (User) ==========
     /**
      * 사용자를 찾을 수 없음

@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 스케줄 엔티티
  * 
@@ -70,6 +72,13 @@ public class Schedule extends BaseTimeEntity {
     private User user;
 
     /**
+     * 삭제 일시 (Soft Delete)
+     * <p>NULL이면 활성 상태, 값이 있으면 삭제된 상태</p>
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    /**
      * Schedule 엔티티 생성자
      * 
      * @param clientId iOS에서 생성한 UUID
@@ -97,5 +106,31 @@ public class Schedule extends BaseTimeEntity {
         this.name = name;
         this.duration = duration;
     }
-}
 
+    /**
+     * Soft Delete 처리
+     * <p>deletedAt을 현재 시간으로 설정하여 논리적 삭제 처리</p>
+     */
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 삭제 여부 확인
+     * 
+     * @return 삭제되었으면 true, 활성 상태면 false
+     */
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    /**
+     * 소유자 확인
+     * 
+     * @param userId 확인할 사용자 ID
+     * @return 본인 소유면 true, 아니면 false
+     */
+    public boolean isOwnedBy(Long userId) {
+        return this.user != null && this.user.getId().equals(userId);
+    }
+}

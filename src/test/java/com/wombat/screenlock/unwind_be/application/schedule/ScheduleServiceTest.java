@@ -2,6 +2,7 @@ package com.wombat.screenlock.unwind_be.application.schedule;
 
 import com.wombat.screenlock.unwind_be.api.schedule.dto.CreateScheduleRequest;
 import com.wombat.screenlock.unwind_be.api.schedule.dto.ScheduleResponse;
+import com.wombat.screenlock.unwind_be.api.schedule.dto.UpdateScheduleRequest;
 import com.wombat.screenlock.unwind_be.domain.schedule.entity.Schedule;
 import com.wombat.screenlock.unwind_be.domain.schedule.repository.ScheduleRepository;
 import com.wombat.screenlock.unwind_be.domain.user.entity.User;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -68,6 +71,8 @@ class ScheduleServiceTest {
                 .email("test@example.com")
                 .passwordHash("hashedPassword")
                 .build();
+        // 테스트용 User ID 설정 (리플렉션)
+        ReflectionTestUtils.setField(testUser, "id", VALID_USER_ID);
         
         validRequest = new CreateScheduleRequest(
                 VALID_CLIENT_ID,
@@ -280,6 +285,170 @@ class ScheduleServiceTest {
             assertThat(result).isEmpty();
             
             verify(scheduleRepository).findByUserIdAndUpdatedAtAfter(VALID_USER_ID, lastSyncTime);
+        }
+    }
+
+    // ========== BE-009: 스케줄 수정/삭제 테스트 ==========
+
+    @Nested
+    @DisplayName("updateSchedule 메서드")
+    class UpdateSchedule {
+
+        private static final Long SCHEDULE_ID = 100L;
+        private static final String UPDATED_NAME = "수정된 스케줄";
+        private static final Integer UPDATED_DURATION = 90;
+
+        private Schedule existingSchedule;
+        private UpdateScheduleRequest updateRequest;
+
+        @BeforeEach
+        void setUp() {
+            existingSchedule = Schedule.builder()
+                    .clientId(VALID_CLIENT_ID)
+                    .name(SCHEDULE_NAME)
+                    .duration(DURATION)
+                    .user(testUser)
+                    .build();
+            
+            updateRequest = new UpdateScheduleRequest(UPDATED_NAME, UPDATED_DURATION);
+        }
+
+        @Test
+        @DisplayName("정상 수정 - 스케줄 이름과 시간 업데이트")
+        void should_UpdateSchedule_When_ValidRequest() {
+            // Given
+            given(scheduleRepository.findActiveById(SCHEDULE_ID))
+                    .willReturn(Optional.of(existingSchedule));
+            given(scheduleRepository.save(any(Schedule.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
+
+            // When
+            ScheduleResponse response = scheduleService.updateSchedule(SCHEDULE_ID, updateRequest, VALID_USER_ID);
+
+            // Then
+            assertThat(response).isNotNull();
+            assertThat(response.name()).isEqualTo(UPDATED_NAME);
+            assertThat(response.duration()).isEqualTo(UPDATED_DURATION);
+            
+            verify(scheduleRepository).findActiveById(SCHEDULE_ID);
+            verify(scheduleRepository).save(any(Schedule.class));
+        }
+
+        @Test
+        @DisplayName("SCHEDULE_NOT_FOUND - 스케줄을 찾을 수 없음")
+        void should_ThrowException_When_UpdateScheduleNotFound() {
+            // Given
+            given(scheduleRepository.findActiveById(SCHEDULE_ID))
+                    .willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> scheduleService.updateSchedule(SCHEDULE_ID, updateRequest, VALID_USER_ID))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException businessException = (BusinessException) ex;
+                        assertThat(businessException.getErrorCode()).isEqualTo(ErrorCode.SCHEDULE_NOT_FOUND);
+                    });
+            
+            verify(scheduleRepository).findActiveById(SCHEDULE_ID);
+            verify(scheduleRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("SCHEDULE_ACCESS_DENIED - 타인의 스케줄 수정 시도")
+        void should_ThrowException_When_UpdateNotOwner() {
+            // Given
+            Long otherUserId = 999L;
+            given(scheduleRepository.findActiveById(SCHEDULE_ID))
+                    .willReturn(Optional.of(existingSchedule));
+
+            // When & Then
+            assertThatThrownBy(() -> scheduleService.updateSchedule(SCHEDULE_ID, updateRequest, otherUserId))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException businessException = (BusinessException) ex;
+                        assertThat(businessException.getErrorCode()).isEqualTo(ErrorCode.SCHEDULE_ACCESS_DENIED);
+                    });
+            
+            verify(scheduleRepository).findActiveById(SCHEDULE_ID);
+            verify(scheduleRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteSchedule 메서드")
+    class DeleteSchedule {
+
+        private static final Long SCHEDULE_ID = 100L;
+
+        private Schedule existingSchedule;
+
+        @BeforeEach
+        void setUp() {
+            existingSchedule = Schedule.builder()
+                    .clientId(VALID_CLIENT_ID)
+                    .name(SCHEDULE_NAME)
+                    .duration(DURATION)
+                    .user(testUser)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("정상 삭제 - Soft Delete 처리")
+        void should_SoftDeleteSchedule_When_ValidRequest() {
+            // Given
+            given(scheduleRepository.findActiveById(SCHEDULE_ID))
+                    .willReturn(Optional.of(existingSchedule));
+            given(scheduleRepository.save(any(Schedule.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
+
+            // When
+            scheduleService.deleteSchedule(SCHEDULE_ID, VALID_USER_ID);
+
+            // Then
+            assertThat(existingSchedule.isDeleted()).isTrue();
+            assertThat(existingSchedule.getDeletedAt()).isNotNull();
+            
+            verify(scheduleRepository).findActiveById(SCHEDULE_ID);
+            verify(scheduleRepository).save(existingSchedule);
+        }
+
+        @Test
+        @DisplayName("SCHEDULE_NOT_FOUND - 스케줄을 찾을 수 없음")
+        void should_ThrowException_When_DeleteScheduleNotFound() {
+            // Given
+            given(scheduleRepository.findActiveById(SCHEDULE_ID))
+                    .willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> scheduleService.deleteSchedule(SCHEDULE_ID, VALID_USER_ID))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException businessException = (BusinessException) ex;
+                        assertThat(businessException.getErrorCode()).isEqualTo(ErrorCode.SCHEDULE_NOT_FOUND);
+                    });
+            
+            verify(scheduleRepository).findActiveById(SCHEDULE_ID);
+            verify(scheduleRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("SCHEDULE_ACCESS_DENIED - 타인의 스케줄 삭제 시도")
+        void should_ThrowException_When_DeleteNotOwner() {
+            // Given
+            Long otherUserId = 999L;
+            given(scheduleRepository.findActiveById(SCHEDULE_ID))
+                    .willReturn(Optional.of(existingSchedule));
+
+            // When & Then
+            assertThatThrownBy(() -> scheduleService.deleteSchedule(SCHEDULE_ID, otherUserId))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException businessException = (BusinessException) ex;
+                        assertThat(businessException.getErrorCode()).isEqualTo(ErrorCode.SCHEDULE_ACCESS_DENIED);
+                    });
+            
+            verify(scheduleRepository).findActiveById(SCHEDULE_ID);
+            verify(scheduleRepository, never()).save(any());
         }
     }
 }

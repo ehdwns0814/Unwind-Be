@@ -121,5 +121,29 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Schedule> findByUserIdAndUpdatedAtAfter(
             @Param("userId") Long userId, 
             @Param("lastSyncTime") java.time.LocalDateTime lastSyncTime);
-}
 
+    // ========== Soft Delete 고려 조회 (BE-009) ==========
+
+    /**
+     * 활성 스케줄 조회 (Soft Delete 제외)
+     * 
+     * <p>deletedAt이 NULL인 스케줄만 조회합니다.
+     * 수정/삭제 작업 전 스케줄 존재 여부 확인에 사용됩니다.</p>
+     * 
+     * @param id 스케줄 ID
+     * @return 활성 스케줄 Optional (삭제되었거나 없으면 empty)
+     */
+    @Query("SELECT s FROM Schedule s WHERE s.id = :id AND s.deletedAt IS NULL")
+    Optional<Schedule> findActiveById(@Param("id") Long id);
+
+    /**
+     * 사용자의 활성 스케줄 목록 조회 (Soft Delete 제외)
+     * 
+     * <p>사용자가 소유한 활성 상태의 스케줄만 조회합니다.</p>
+     * 
+     * @param userId 사용자 ID
+     * @return 활성 스케줄 목록
+     */
+    @Query("SELECT s FROM Schedule s WHERE s.user.id = :userId AND s.deletedAt IS NULL")
+    List<Schedule> findActiveByUserId(@Param("userId") Long userId);
+}

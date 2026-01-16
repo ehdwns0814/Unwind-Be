@@ -2,31 +2,29 @@ package com.wombat.screenlock.unwind_be.api.schedule.controller;
 
 import com.wombat.screenlock.unwind_be.api.schedule.dto.CreateScheduleRequest;
 import com.wombat.screenlock.unwind_be.api.schedule.dto.ScheduleResponse;
+import com.wombat.screenlock.unwind_be.api.schedule.dto.UpdateScheduleRequest;
 import com.wombat.screenlock.unwind_be.application.schedule.ScheduleService;
 import com.wombat.screenlock.unwind_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 스케줄 API Controller
@@ -36,8 +34,9 @@ import java.util.List;
  * 
  * <h3>엔드포인트</h3>
  * <ul>
- *   <li>GET /api/schedules - 스케줄 목록 조회 (동기화)</li>
  *   <li>POST /api/schedules - 스케줄 생성</li>
+ *   <li>PUT /api/schedules/{id} - 스케줄 수정</li>
+ *   <li>DELETE /api/schedules/{id} - 스케줄 삭제 (Soft Delete)</li>
  * </ul>
  * 
  * <h3>보안</h3>
@@ -45,6 +44,7 @@ import java.util.List;
  * Authorization 헤더에 Bearer Token을 포함해야 합니다.</p>
  * 
  * @see CreateScheduleRequest
+ * @see UpdateScheduleRequest
  * @see ScheduleResponse
  */
 @Tag(name = "Schedule", description = "스케줄 관리 API")
@@ -57,74 +57,10 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     /**
-     * 스케줄 목록 조회 API (동기화)
-     * 
-     * <p>사용자의 스케줄 목록을 조회합니다. lastSyncTime 파라미터가 있으면
-     * 해당 시간 이후 변경된 데이터만 반환합니다 (증분 동기화).</p>
-     * 
-     * @param lastSyncTime 마지막 동기화 시간 (선택)
-     * @param userId 인증된 사용자 ID
-     * @return 200 OK + 스케줄 목록
-     */
-    @Operation(
-        summary = "스케줄 목록 조회 (동기화)",
-        description = "사용자의 스케줄 목록을 조회합니다. lastSyncTime 파라미터로 증분 동기화가 가능합니다.",
-        security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "스케줄 목록 조회 성공",
-            content = @Content(mediaType = "application/json")
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "인증 실패 (JWT 토큰 없음/만료)",
-            content = @Content(mediaType = "application/json")
-        )
-    })
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<ScheduleResponse>>> getSchedules(
-            @Parameter(description = "마지막 동기화 시간 (ISO-8601 형식, 예: 2026-02-09T10:00:00)")
-            @RequestParam(required = false) 
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastSyncTime,
-            @AuthenticationPrincipal Long userId) {
-        
-        List<ScheduleResponse> schedules;
-        
-        if (lastSyncTime != null) {
-            log.info("스케줄 증분 동기화 요청 - userId: {}, lastSyncTime: {}", userId, lastSyncTime);
-            schedules = scheduleService.getSchedulesSince(userId, lastSyncTime);
-        } else {
-            log.info("스케줄 전체 목록 조회 요청 - userId: {}", userId);
-            schedules = scheduleService.getSchedules(userId);
-        }
-        
-        return ResponseEntity.ok(ApiResponse.success(schedules));
-    }
-
-    /**
      * 스케줄 생성 API
      * 
-     * <p>새 스케줄을 생성합니다. iOS 앱에서 전달한 clientId를 기반으로
-     * 서버에서 스케줄을 저장하고 생성된 스케줄 정보를 반환합니다.</p>
-     * 
-     * <h3>요청</h3>
-     * <ul>
-     *   <li>clientId: iOS 앱에서 생성한 UUID (필수, 36자)</li>
-     *   <li>name: 스케줄 이름 (필수, 최대 100자)</li>
-     *   <li>duration: 집중 시간 (필수, 1~480분)</li>
-     * </ul>
-     * 
-     * <h3>응답</h3>
-     * <ul>
-     *   <li>201 Created: 스케줄 생성 성공</li>
-     *   <li>400 Bad Request: 유효성 검증 실패</li>
-     *   <li>401 Unauthorized: 인증 실패 (JWT 토큰 없음/만료)</li>
-     *   <li>409 Conflict: clientId 중복</li>
-     * </ul>
-     * 
      * @param request 스케줄 생성 요청 DTO
+     * @param userId 인증된 사용자 ID
      * @return 201 Created + ScheduleResponse
      */
     @Operation(
@@ -143,17 +79,12 @@ public class ScheduleController {
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
-            description = "유효성 검증 실패 (입력값 오류)",
+            description = "유효성 검증 실패",
             content = @Content(mediaType = "application/json")
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "401",
-            description = "인증 실패 (JWT 토큰 없음/만료)",
-            content = @Content(mediaType = "application/json")
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "409",
-            description = "clientId 중복",
+            description = "인증 실패",
             content = @Content(mediaType = "application/json")
         )
     })
@@ -169,6 +100,109 @@ public class ScheduleController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response));
     }
+
+    // ========== BE-009: 스케줄 수정/삭제 ==========
+
+    /**
+     * 스케줄 수정 API
+     * 
+     * @param id 스케줄 ID
+     * @param request 스케줄 수정 요청 DTO
+     * @param userId 인증된 사용자 ID
+     * @return 200 OK + ScheduleResponse
+     */
+    @Operation(
+        summary = "스케줄 수정",
+        description = "스케줄의 이름과 집중 시간을 수정합니다. 본인 소유의 스케줄만 수정 가능합니다.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "스케줄 수정 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ScheduleResponse.class)
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "유효성 검증 실패",
+            content = @Content(mediaType = "application/json")
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "401",
+            description = "인증 실패",
+            content = @Content(mediaType = "application/json")
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "403",
+            description = "권한 없음 (타인의 스케줄)",
+            content = @Content(mediaType = "application/json")
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "스케줄을 찾을 수 없음",
+            content = @Content(mediaType = "application/json")
+        )
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ScheduleResponse>> updateSchedule(
+            @Parameter(description = "스케줄 ID", required = true)
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateScheduleRequest request,
+            @AuthenticationPrincipal Long userId) {
+        
+        log.info("스케줄 수정 요청 - scheduleId: {}, userId: {}", id, userId);
+        
+        ScheduleResponse response = scheduleService.updateSchedule(id, request, userId);
+        
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 스케줄 삭제 API (Soft Delete)
+     * 
+     * @param id 스케줄 ID
+     * @param userId 인증된 사용자 ID
+     * @return 204 No Content
+     */
+    @Operation(
+        summary = "스케줄 삭제",
+        description = "스케줄을 삭제합니다 (Soft Delete). 본인 소유의 스케줄만 삭제 가능합니다.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "204",
+            description = "스케줄 삭제 성공"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "401",
+            description = "인증 실패",
+            content = @Content(mediaType = "application/json")
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "403",
+            description = "권한 없음 (타인의 스케줄)",
+            content = @Content(mediaType = "application/json")
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "스케줄을 찾을 수 없음",
+            content = @Content(mediaType = "application/json")
+        )
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSchedule(
+            @Parameter(description = "스케줄 ID", required = true)
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long userId) {
+        
+        log.info("스케줄 삭제 요청 - scheduleId: {}, userId: {}", id, userId);
+        
+        scheduleService.deleteSchedule(id, userId);
+        
+        return ResponseEntity.noContent().build();
+    }
 }
-
-
