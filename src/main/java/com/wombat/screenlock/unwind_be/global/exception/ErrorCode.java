@@ -44,6 +44,17 @@ public enum ErrorCode {
      */
     INVALID_REFRESH_TOKEN(401, "A003", "유효하지 않거나 만료된 토큰입니다"),
 
+    // ========== 스케줄 에러 (Schedule) ==========
+    /**
+     * 이미 존재하는 스케줄 (clientId 중복)
+     */
+    SCHEDULE_ALREADY_EXISTS(409, "SCH001", "이미 존재하는 스케줄입니다"),
+
+    /**
+     * 스케줄을 찾을 수 없음
+     */
+    SCHEDULE_NOT_FOUND(404, "SCH002", "스케줄을 찾을 수 없습니다"),
+
     // ========== 서버 에러 (Server) ==========
     /**
      * 내부 서버 오류
