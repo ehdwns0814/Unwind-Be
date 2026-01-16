@@ -2,6 +2,7 @@ package com.wombat.screenlock.unwind_be.api.schedule.controller;
 
 import com.wombat.screenlock.unwind_be.api.schedule.dto.CreateScheduleRequest;
 import com.wombat.screenlock.unwind_be.api.schedule.dto.ScheduleResponse;
+import com.wombat.screenlock.unwind_be.application.schedule.ScheduleService;
 import com.wombat.screenlock.unwind_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,8 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class ScheduleController {
 
-    // TODO: BE-007에서 ScheduleService 주입 예정
-    // private final ScheduleService scheduleService;
+    private final ScheduleService scheduleService;
 
     /**
      * 스케줄 생성 API
@@ -103,17 +104,15 @@ public class ScheduleController {
     })
     @PostMapping
     public ResponseEntity<ApiResponse<ScheduleResponse>> createSchedule(
-            @Valid @RequestBody CreateScheduleRequest request) {
+            @Valid @RequestBody CreateScheduleRequest request,
+            @AuthenticationPrincipal Long userId) {
         
-        log.info("스케줄 생성 요청 - clientId: {}", request.clientId());
+        log.info("스케줄 생성 요청 - clientId: {}, userId: {}", request.clientId(), userId);
         
-        // TODO: BE-007에서 실제 서비스 로직 구현 예정
-        // ScheduleResponse response = scheduleService.createSchedule(request, userId);
-        // return ResponseEntity.status(HttpStatus.CREATED)
-        //         .body(ApiResponse.success(response));
+        ScheduleResponse response = scheduleService.createSchedule(request, userId);
         
-        // Stub Response (BE-007에서 실제 로직으로 교체 예정)
-        throw new UnsupportedOperationException("BE-007에서 구현 예정");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response));
     }
 }
 
