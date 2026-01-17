@@ -81,26 +81,28 @@ cd Unwind-Be
 
 2. **환경 변수 설정**
 
-`.env` 파일을 프로젝트 루트에 생성하고 다음 변수를 설정하세요:
+보안을 위해 모든 민감한 정보는 환경 변수로 관리합니다. 프로젝트 루트에 `.env` 파일을 생성하고 다음 변수들을 설정하세요. (가이드는 `application-local.yml.template`을 참조하세요.)
 
 ```properties
 # Database
-DB_URL=jdbc:mysql://localhost:3306/unwind
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 
 # JWT
-JWT_SECRET=your_jwt_secret_key_here_at_least_256_bits
-JWT_ACCESS_EXPIRATION=1800000
-JWT_REFRESH_EXPIRATION=604800000
+JWT_SECRET_KEY=your_jwt_secret_key_at_least_32_chars
 
-# Redis (Optional)
+# Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
+REDIS_PASSWORD=
 
-# Kafka (Optional)
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+# AI Remote Model
+AI_API_KEY=your_api_key_here
+AI_BASE_URL=https://api.openai.com/v1
 ```
+
+> [!NOTE]
+> `me.paulschwarz:spring-dotenv` 라이브러리가 추가되어 있어, 별도의 설정 없이 애플리케이션 시작 시 `.env` 파일의 값을 자동으로 읽어옵니다.
 
 3. **빌드 및 실행**
 
@@ -241,7 +243,11 @@ open build/reports/jacoco/test/html/index.html
 
 ---
 
-## 🔒 보안 가이드
+### 보안 정보 관리 방침
+
+- **환경 변수 관리**: DB 접속 정보, API 키, JWT Secret 등은 절대 코드에 포함시키지 않으며 `.env` 파일을 통해 주입받습니다.
+- **Local Template**: 신규 개발자를 위해 `application-local.yml.template`을 제공합니다.
+- **.gitignore**: `.env`, `application-local.yml` 등 실제 설정값은 Git 추적에서 제외됩니다.
 
 ### JWT 토큰 관리
 
