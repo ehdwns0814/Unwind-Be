@@ -135,12 +135,14 @@ flowchart TB
 
 ---
 
-## Step 5: GitHub 이슈 동기화
+## Step 5: GitHub 이슈 동기화 및 브랜치 생성
 
 ### 목적
-- 보완된 이슈 문서를 GitHub에 동기화합니다.
+- 보완된 이슈 문서를 GitHub에 동기화하고, 작업용 브랜치를 생성합니다.
 
 ### 수행 작업
+
+#### 5.1 이슈 동기화
 ```bash
 # 이슈 본문 업데이트
 gh issue edit <ISSUE_NUMBER> --body "$(tail -n +3 tasks/github-issues/issue-XXX-*.md)"
@@ -153,8 +155,34 @@ gh project item-edit \
   --single-select-option-id <IN_PROGRESS_OPTION_ID>
 ```
 
-### ⚠️ 작업 시작 시 필수 상태 변경
-- **반드시** 작업 시작 전에 이슈 상태를 `Backlog` → `In Progress`로 변경해야 합니다
+#### 5.2 Feature 브랜치 생성 (필수)
+
+> **⚠️ 중요**: 코드 구현 작업 시작 전 **반드시** `102-gitflow-agent.mdc` 룰을 참조하여 Feature 브랜치를 생성해야 합니다.
+
+```bash
+# 1. main 브랜치 최신화
+git checkout main
+git pull origin main
+
+# 2. Feature 브랜치 생성 (이슈 번호와 작업명 포함)
+git checkout -b feature/BE-XXX-task-name
+
+# 3. 원격 저장소에 브랜치 푸시 (작업 시작 알림)
+git push -u origin feature/BE-XXX-task-name
+```
+
+#### 브랜치 네이밍 규칙 (102-gitflow-agent.mdc 참조)
+| 브랜치 접두사 | 용도 | 예시 |
+|---------------|------|------|
+| `feature/` | 새로운 기능 개발 | `feature/BE-030-user-registration` |
+| `fix/` | 버그 수정 | `fix/BE-031-auth-token-expired` |
+| `doc/` | 문서 작업 | `doc/BE-032-api-docs-update` |
+| `release/` | 릴리스 준비 | `release/v1.2.0` |
+
+### ⚠️ 작업 시작 시 필수 체크리스트
+- [ ] 이슈 상태를 `Backlog` → `In Progress`로 변경
+- [ ] `102-gitflow-agent.mdc` 룰을 참조하여 Feature 브랜치 생성
+- [ ] 원격 저장소에 브랜치 푸시 완료
 - 이는 팀 내 작업 충돌 방지 및 진행 상황 가시성 확보를 위함입니다
 
 ---
@@ -167,6 +195,7 @@ gh project item-edit \
 ### 참조할 주요 Rules
 | Rule 번호 | 파일명 | 용도 |
 |-----------|--------|------|
+| 102 | `102-gitflow-agent.mdc` | **Git Flow 브랜치/커밋 규칙 (필수)** |
 | 200 | `200-git-commit-push-pr.mdc` | Git 커밋/PR 규칙 |
 | 300 | `300-java-spring-cursor-rules.mdc` | Spring Boot 개발 규칙 |
 | 302 | `302-jpa-querydsl-dynamic-query-rules.mdc` | JPA/QueryDSL 규칙 |
@@ -195,14 +224,23 @@ gh project item-edit \
 7. **Test 작성**: 각 계층별 테스트
 
 ### Git Workflow
-```bash
-# 1. Feature 브랜치 생성
-git checkout -b feature/BE-XXX-task-name
 
-# 2. 단계별 커밋 (Conventional Commits)
+> **📌 Note**: Feature 브랜치는 Step 5에서 이미 생성되어 있어야 합니다.
+> 브랜치가 생성되지 않았다면 Step 5로 돌아가 `102-gitflow-agent.mdc` 룰을 참조하여 브랜치를 먼저 생성하세요.
+
+```bash
+# 0. 현재 브랜치 확인 (Step 5에서 생성한 feature 브랜치인지 확인)
+git branch --show-current
+# 예상 출력: feature/BE-XXX-task-name
+
+# 1. 단계별 커밋 (Conventional Commits - 102-gitflow-agent.mdc 참조)
+git add -p  # atomic commit을 위해 변경사항 선택적 스테이징
 git commit -m "feat(entity): add XXX entity"
 git commit -m "feat(repository): add XXX repository with query methods"
 git commit -m "test(repository): add XXX repository integration tests"
+
+# 2. 원격 저장소에 푸시
+git push origin feature/BE-XXX-task-name
 
 # 3. Draft PR 생성
 gh pr create --draft --title "[BE-XXX] Task Title" --body "..."
@@ -274,11 +312,13 @@ gh project item-edit \
 1. **Opus 4.5 모델**: Step 1~6, Step 8 수행 (분석, 계획, 문서화)
 2. **Composer1 모델**: Step 7 수행 (실제 코드 구현)
 3. **상태 관리**: 작업 시작 시 이슈 상태를 In Progress로 변경
-4. **문서 동기화**: 로컬 이슈 문서와 GitHub 이슈 본문 동기화 유지
-5. **완료 정리**: 머지 후 이슈 파일을 finished-issues로 이동
+4. **브랜치 생성 필수**: Step 5에서 `102-gitflow-agent.mdc` 룰을 참조하여 Feature 브랜치 생성
+5. **문서 동기화**: 로컬 이슈 문서와 GitHub 이슈 본문 동기화 유지
+6. **완료 정리**: 머지 후 이슈 파일을 finished-issues로 이동
 
 ## Related Rules
 - `100-error-fixing-process.mdc`: 오류 발생 시 진단 프로세스
+- `102-gitflow-agent.mdc`: **Git Flow 브랜치/커밋 규칙 (브랜치 생성 시 필수 참조)**
 - `200-git-commit-push-pr.mdc`: Git 커밋/PR 규칙
 - `202-github-issue-handling.mdc`: GitHub 이슈 관리 규칙
 - `300-java-spring-cursor-rules.mdc`: Spring Boot 개발 규칙
