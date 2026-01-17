@@ -9,8 +9,8 @@ spring:
   # ========== Database (MySQL) ==========
   datasource:
     url: jdbc:mysql://localhost:3306/unwind?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -45,7 +45,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD}
       timeout: 3000ms
       lettuce:
         pool:
@@ -56,7 +56,7 @@ spring:
 
 # ========== JWT Configuration ==========
 jwt:
-  secret: ${JWT_SECRET_KEY:your-secret-key-must-be-at-least-32-characters-long-for-hs256-algorithm}
+  secret: ${JWT_SECRET_KEY}
   access-token-expiration: 1800   # 30분 (초 단위)
   refresh-token-expiration: 604800 # 7일 (초 단위)
 
@@ -109,8 +109,8 @@ spring:
 
   datasource:
     url: jdbc:mysql://localhost:3306/unwind_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -142,3 +142,9 @@ logging:
     com.wombat.screenlock.unwind_be: INFO
     org.hibernate.SQL: WARN
 
+
+# ========== AI Remote Model ==========
+ai:
+  api:
+    key: ${AI_API_KEY}
+    base-url: ${AI_BASE_URL:https://api.openai.com/v1}
