@@ -269,7 +269,8 @@ sequenceDiagram
 | **REQ-FUNC-027** | 동기화 | 시스템은 스케줄 변경 시 서버에 자동 동기화해야 함 | Must | **Given** 사용자가 스케줄을 생성/수정/삭제할 때<br>**When** 네트워크 연결이 가능하면<br>**Then** 즉시 서버에 변경사항 전송, 실패 시 로컬 큐에 저장 |
 | **REQ-FUNC-028** | 오프라인 | 시스템은 네트워크 없이도 핵심 기능이 동작해야 함 | Must | **Given** 네트워크 연결이 없을 때<br>**When** 사용자가 스케줄 실행/올인 모드를 사용하면<br>**Then** 로컬 데이터(UserDefaults)로 정상 동작, 동기화는 연결 복구 시 자동 재시도 |
 | **REQ-FUNC-029** | 통계 전송 | 시스템은 스케줄 완료 시 통계 데이터를 서버에 전송해야 함 | Must | **Given** 스케줄이 완료되거나 중단될 때<br>**When** 네트워크 연결이 가능하면<br>**Then** 사용자 ID, 달성 여부, 집중 시간을 서버에 전송 |
-| **REQ-FUNC-030** | 통계 전송 | 시스템은 앱 강제 종료 횟수를 카운트하고 서버에 전송해야 함 | Should | **Given** 사용자가 집중 세션 중 앱을 강제 종료할 때<br>**When** 앱이 재실행되면<br>**Then** 강제 종료 이벤트를 감지하고 서버에 카운트 전송 |
+| **REQ-FUNC-030** | Story 6 | 시스템은 앱 강제 종료 횟수를 카운트하고 서버에 전송해야 함 | Should | **Given** 사용자가 집중 세션 중 앱을 강제 종료할 때<br>**When** 앱이 재실행되면<br>**Then** 강제 종료 이벤트를 감지하고 서버에 카운트 전송 |
+| **REQ-FUNC-031** | 인증 | 시스템은 토큰 갱신(Refresh Token) 기능을 제공해야 함 | Must | **Given** Access Token이 만료되었을 때<br>**When** 유효한 Refresh Token으로 갱신 요청을 보내면<br>**Then** 새로운 Access Token과 Refresh Token을 발급하고 Redis에 저장함 |
 
 ### 4.2 비기능 요구사항
 
@@ -308,7 +309,7 @@ sequenceDiagram
 | Story 4 | 차단 앱 설정 | REQ-FUNC-015, 016 | TC-028 ~ TC-032 | Must |
 | Story 5 | 권한 해제 패널티 | REQ-FUNC-017, 018 | TC-033 ~ TC-036 | Should |
 | Story 6 | 스트릭 & 통계 | REQ-FUNC-019, 020 | TC-037 ~ TC-040 | Should |
-| 인증 | 사용자 인증 | REQ-FUNC-024, 025 | TC-041 ~ TC-044 | Must |
+| 인증 | 사용자 인증 | REQ-FUNC-024, 025, 031 | TC-041 ~ TC-046 | Must |
 | 동기화 | 데이터 동기화 | REQ-FUNC-026, 027, 028 | TC-045 ~ TC-050 | Must |
 | 통계 전송 | 서버 통계 | REQ-FUNC-029, 030 | TC-051 ~ TC-054 | Must |
 | 예외 처리 | 에러 핸들링 | REQ-FUNC-021, 022, 023 | TC-055 ~ TC-060 | Should |
@@ -317,6 +318,19 @@ sequenceDiagram
 | KPI-03 | 우회율 | REQ-NF-015 | TC-063 | Must |
 | 성능 | 응답 시간 | REQ-NF-001, 002, 003, 017 | TC-064 ~ TC-067 | Must |
 | 신뢰성 | 차단 지속성 | REQ-NF-004, 005 | TC-068, TC-069 | Must |
+
+---
+
+### 5.1 인증 관련 테스트 케이스 상세 (TC-041 ~ TC-046)
+
+| TC ID | 테스트 목표 | 관련 요구사항 | 인수 기준 (Acceptance Criteria) |
+|:---:|---|---|---|
+| **TC-041** | 회원가입 성공 | REQ-FUNC-024 | 이메일/비밀번호 입력 시 계정 생성 및 토큰 발급 확인 |
+| **TC-042** | 회원가입 실패 (중복) | REQ-FUNC-024 | 이미 존재하는 이메일 사용 시 `EMAIL_ALREADY_EXISTS` 에러 반환 확인 |
+| **TC-043** | 로그인 성공 | REQ-FUNC-025 | 정확한 자격 증명 시 Access/Refresh 토큰 발급 확인 |
+| **TC-044** | 로그인 실패 (자격증명) | REQ-FUNC-025 | 존재하지 않는 사용자 또는 비밀번호 불일치 시 `INVALID_CREDENTIALS` 에러 확인 |
+| **TC-045** | 토큰 갱신 성공 | REQ-FUNC-031 | 유효한 Refresh 토큰으로 요청 시 신규 토큰 발급 및 Redis 업데이트 확인 |
+| **TC-046** | 토큰 갱신 실패 | REQ-FUNC-031 | 유효하지 않거나 Redis 데이터와 불일치하는 토큰 시 `INVALID_REFRESH_TOKEN` 에러 확인 |
 
 ---
 

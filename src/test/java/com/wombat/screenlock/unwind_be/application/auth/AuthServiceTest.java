@@ -2,6 +2,7 @@ package com.wombat.screenlock.unwind_be.application.auth;
 
 import com.wombat.screenlock.unwind_be.api.auth.dto.LoginRequest;
 import com.wombat.screenlock.unwind_be.api.auth.dto.RefreshRequest;
+import com.wombat.screenlock.unwind_be.api.auth.dto.SignUpRequest;
 import com.wombat.screenlock.unwind_be.api.auth.dto.TokenResponse;
 import com.wombat.screenlock.unwind_be.domain.user.entity.Role;
 import com.wombat.screenlock.unwind_be.domain.user.entity.User;
@@ -33,13 +34,15 @@ import static org.mockito.Mockito.verify;
 /**
  * AuthService 단위 테스트
  * 
- * <p>Mockito를 사용하여 의존성을 Mocking하고
- * AuthService의 비즈니스 로직을 검증합니다.</p>
+ * <p>
+ * Mockito를 사용하여 의존성을 Mocking하고
+ * AuthService의 비즈니스 로직을 검증합니다.
+ * </p>
  * 
  * <h3>테스트 범위</h3>
  * <ul>
- *   <li>로그인: 성공, 사용자 없음, 비밀번호 불일치</li>
- *   <li>토큰 갱신: 성공, 토큰 무효, Redis 불일치</li>
+ * <li>로그인: 성공, 사용자 없음, 비밀번호 불일치</li>
+ * <li>토큰 갱신: 성공, 토큰 무효, Redis 불일치</li>
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
@@ -97,18 +100,68 @@ class AuthServiceTest {
         }
     }
 
+    // ========== 회원가입 테스트 ==========
+
+    @Nested
+    @DisplayName("[REQ-FUNC-024] 회원가입")
+    class Signup {
+
+        @Test
+        @DisplayName("[TC-041] 유효한 요청으로 회원가입 시 토큰 반환")
+        void should_ReturnToken_When_ValidRequest() {
+            // Given
+            SignUpRequest request = new SignUpRequest(EMAIL, PASSWORD);
+
+            given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+            given(passwordEncoder.encode(PASSWORD)).willReturn(PASSWORD_HASH);
+            given(userRepository.save(org.mockito.ArgumentMatchers.any(User.class))).willReturn(testUser);
+            given(jwtProvider.generateAccessToken(USER_ID)).willReturn(ACCESS_TOKEN);
+            given(jwtProvider.generateRefreshToken(USER_ID)).willReturn(REFRESH_TOKEN);
+            given(jwtProvider.getAccessTokenExpirationSeconds()).willReturn(EXPIRES_IN);
+
+            // When
+            TokenResponse response = authService.signup(request);
+
+            // Then
+            assertThat(response).isNotNull();
+            assertThat(response.accessToken()).isEqualTo(ACCESS_TOKEN);
+            assertThat(response.refreshToken()).isEqualTo(REFRESH_TOKEN);
+
+            verify(refreshTokenRepository).save(USER_ID, REFRESH_TOKEN);
+        }
+
+        @Test
+        @DisplayName("[TC-042] 이메일 중복 시 A002 예외")
+        void should_ThrowA002_When_EmailDuplicated() {
+            // Given
+            SignUpRequest request = new SignUpRequest(EMAIL, PASSWORD);
+
+            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+
+            // When & Then
+            assertThatThrownBy(() -> authService.signup(request))
+                    .isInstanceOf(AuthException.class)
+                    .satisfies(ex -> {
+                        AuthException authException = (AuthException) ex;
+                        assertThat(authException.getErrorCode()).isEqualTo(ErrorCode.EMAIL_ALREADY_EXISTS);
+                    });
+
+            verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+        }
+    }
+
     // ========== 로그인 테스트 ==========
 
     @Nested
-    @DisplayName("로그인")
+    @DisplayName("[REQ-FUNC-025] 로그인")
     class Login {
 
         @Test
-        @DisplayName("유효한 인증 정보로 로그인 시 토큰 반환")
+        @DisplayName("[TC-043] 유효한 인증 정보로 로그인 시 토큰 반환")
         void should_ReturnToken_When_ValidCredentials() {
             // Given
             LoginRequest request = new LoginRequest(EMAIL, PASSWORD);
-            
+
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(testUser));
             given(passwordEncoder.matches(PASSWORD, PASSWORD_HASH)).willReturn(true);
             given(jwtProvider.generateAccessToken(USER_ID)).willReturn(ACCESS_TOKEN);
@@ -123,16 +176,16 @@ class AuthServiceTest {
             assertThat(response.accessToken()).isEqualTo(ACCESS_TOKEN);
             assertThat(response.refreshToken()).isEqualTo(REFRESH_TOKEN);
             assertThat(response.expiresIn()).isEqualTo(EXPIRES_IN);
-            
+
             verify(refreshTokenRepository).save(USER_ID, REFRESH_TOKEN);
         }
 
         @Test
-        @DisplayName("존재하지 않는 이메일로 로그인 시 A001 예외")
+        @DisplayName("[TC-044] 존재하지 않는 이메일로 로그인 시 A001 예외")
         void should_ThrowA001_When_UserNotFound() {
             // Given
             LoginRequest request = new LoginRequest("nonexistent@example.com", PASSWORD);
-            
+
             given(userRepository.findByEmail("nonexistent@example.com")).willReturn(Optional.empty());
 
             // When & Then
@@ -149,11 +202,11 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("비밀번호 불일치 시 A001 예외")
+        @DisplayName("[TC-044] 비밀번호 불일치 시 A001 예외")
         void should_ThrowA001_When_PasswordMismatch() {
             // Given
             LoginRequest request = new LoginRequest(EMAIL, "wrongpassword");
-            
+
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(testUser));
             given(passwordEncoder.matches("wrongpassword", PASSWORD_HASH)).willReturn(false);
 
@@ -173,15 +226,15 @@ class AuthServiceTest {
     // ========== 토큰 갱신 테스트 ==========
 
     @Nested
-    @DisplayName("토큰 갱신")
+    @DisplayName("[REQ-FUNC-031] 토큰 갱신")
     class Refresh {
 
         @Test
-        @DisplayName("유효한 Refresh Token으로 새 토큰 반환")
+        @DisplayName("[TC-045] 유효한 Refresh Token으로 새 토큰 반환")
         void should_ReturnNewToken_When_ValidRefreshToken() {
             // Given
             RefreshRequest request = new RefreshRequest(REFRESH_TOKEN);
-            
+
             given(jwtProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
             given(jwtProvider.getUserIdFromToken(REFRESH_TOKEN)).willReturn(USER_ID);
             given(refreshTokenRepository.findByUserId(USER_ID)).willReturn(Optional.of(REFRESH_TOKEN));
@@ -197,17 +250,17 @@ class AuthServiceTest {
             assertThat(response.accessToken()).isEqualTo(ACCESS_TOKEN);
             assertThat(response.refreshToken()).isEqualTo(NEW_REFRESH_TOKEN);
             assertThat(response.expiresIn()).isEqualTo(EXPIRES_IN);
-            
+
             verify(refreshTokenRepository).save(USER_ID, NEW_REFRESH_TOKEN);
         }
 
         @Test
-        @DisplayName("유효하지 않은 토큰으로 갱신 시 A003 예외")
+        @DisplayName("[TC-046] 유효하지 않은 토큰으로 갱신 시 A003 예외")
         void should_ThrowA003_When_TokenInvalid() {
             // Given
             String invalidToken = "invalid.token.jwt";
             RefreshRequest request = new RefreshRequest(invalidToken);
-            
+
             given(jwtProvider.validateToken(invalidToken)).willReturn(false);
 
             // When & Then
@@ -224,11 +277,11 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Redis에 없는 토큰으로 갱신 시 A003 예외")
+        @DisplayName("[TC-046] Redis에 없는 토큰으로 갱신 시 A003 예외")
         void should_ThrowA003_When_TokenNotInRedis() {
             // Given
             RefreshRequest request = new RefreshRequest(REFRESH_TOKEN);
-            
+
             given(jwtProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
             given(jwtProvider.getUserIdFromToken(REFRESH_TOKEN)).willReturn(USER_ID);
             given(refreshTokenRepository.findByUserId(USER_ID)).willReturn(Optional.empty());
@@ -246,12 +299,12 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Redis 토큰과 불일치 시 A003 예외")
+        @DisplayName("[TC-046] Redis 토큰과 불일치 시 A003 예외")
         void should_ThrowA003_When_TokenMismatchWithRedis() {
             // Given
             String differentToken = "different.token.jwt";
             RefreshRequest request = new RefreshRequest(REFRESH_TOKEN);
-            
+
             given(jwtProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
             given(jwtProvider.getUserIdFromToken(REFRESH_TOKEN)).willReturn(USER_ID);
             given(refreshTokenRepository.findByUserId(USER_ID)).willReturn(Optional.of(differentToken));
@@ -269,4 +322,3 @@ class AuthServiceTest {
         }
     }
 }
-

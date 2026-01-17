@@ -19,12 +19,26 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 인증 서비스
  * 
- * <p>회원가입, 로그인, 토큰 갱신 비즈니스 로직을 담당합니다.</p>
+ * <p>
+ * 회원가입, 로그인, 토큰 갱신 비즈니스 로직을 담당합니다.
+ * </p>
+ * 
+ * <h3>관련 요구사항</h3>
+ * <ul>
+ * <li>[REQ-FUNC-024] 회원가입</li>
+ * <li>[REQ-FUNC-025] 로그인</li>
+ * <li>[REQ-FUNC-031] 토큰 갱신</li>
+ * </ul>
+ * 
+ * <h3>관련 이슈</h3>
+ * <ul>
+ * <li>[BE-003] 인증 로직 및 보안 설정</li>
+ * </ul>
  * 
  * <h3>트랜잭션 관리</h3>
  * <ul>
- *   <li>클래스 레벨: @Transactional(readOnly = true)</li>
- *   <li>데이터 변경 메서드: @Transactional로 오버라이드</li>
+ * <li>클래스 레벨: @Transactional(readOnly = true)</li>
+ * <li>데이터 변경 메서드: @Transactional로 오버라이드</li>
  * </ul>
  * 
  * @see com.wombat.screenlock.unwind_be.domain.user.repository.UserRepository
@@ -47,16 +61,16 @@ public class AuthService {
      * 
      * <h3>로직 순서</h3>
      * <ol>
-     *   <li>이메일 중복 체크</li>
-     *   <li>비밀번호 BCrypt 해시</li>
-     *   <li>User 엔티티 저장</li>
-     *   <li>Access/Refresh Token 발급</li>
-     *   <li>Refresh Token Redis 저장</li>
+     * <li>이메일 중복 체크</li>
+     * <li>비밀번호 BCrypt 해시</li>
+     * <li>User 엔티티 저장</li>
+     * <li>Access/Refresh Token 발급</li>
+     * <li>Refresh Token Redis 저장</li>
      * </ol>
      * 
      * <h3>예외</h3>
      * <ul>
-     *   <li>A002: EMAIL_ALREADY_EXISTS (이메일 중복)</li>
+     * <li>A002: EMAIL_ALREADY_EXISTS (이메일 중복)</li>
      * </ul>
      * 
      * @param request 회원가입 요청 DTO
@@ -79,7 +93,7 @@ public class AuthService {
                 .passwordHash(hashedPassword)
                 .build();
         User savedUser = userRepository.save(user);
-        
+
         log.info("회원가입 완료: userId={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         // 4-5. Token 발급 및 저장
@@ -91,15 +105,15 @@ public class AuthService {
      * 
      * <h3>로직 순서</h3>
      * <ol>
-     *   <li>이메일로 사용자 조회</li>
-     *   <li>비밀번호 BCrypt 검증</li>
-     *   <li>Access/Refresh Token 발급</li>
-     *   <li>Refresh Token Redis 저장</li>
+     * <li>이메일로 사용자 조회</li>
+     * <li>비밀번호 BCrypt 검증</li>
+     * <li>Access/Refresh Token 발급</li>
+     * <li>Refresh Token Redis 저장</li>
      * </ol>
      * 
      * <h3>예외</h3>
      * <ul>
-     *   <li>A001: INVALID_CREDENTIALS (사용자 없음 또는 비밀번호 불일치)</li>
+     * <li>A001: INVALID_CREDENTIALS (사용자 없음 또는 비밀번호 불일치)</li>
      * </ul>
      * 
      * @param request 로그인 요청 DTO
@@ -128,16 +142,16 @@ public class AuthService {
      * 
      * <h3>로직 순서</h3>
      * <ol>
-     *   <li>Refresh Token 유효성 검증</li>
-     *   <li>Token에서 UserId 추출</li>
-     *   <li>Redis 저장 토큰과 비교</li>
-     *   <li>새 Access/Refresh Token 발급</li>
-     *   <li>새 Refresh Token Redis 저장</li>
+     * <li>Refresh Token 유효성 검증</li>
+     * <li>Token에서 UserId 추출</li>
+     * <li>Redis 저장 토큰과 비교</li>
+     * <li>새 Access/Refresh Token 발급</li>
+     * <li>새 Refresh Token Redis 저장</li>
      * </ol>
      * 
      * <h3>예외</h3>
      * <ul>
-     *   <li>A003: INVALID_REFRESH_TOKEN (토큰 무효, 만료, 또는 Redis 불일치)</li>
+     * <li>A003: INVALID_REFRESH_TOKEN (토큰 무효, 만료, 또는 Redis 불일치)</li>
      * </ul>
      * 
      * @param request 토큰 갱신 요청 DTO
@@ -171,8 +185,10 @@ public class AuthService {
     /**
      * Token 생성 및 Redis 저장 (Private Helper)
      * 
-     * <p>Access Token과 Refresh Token을 생성하고,
-     * Refresh Token을 Redis에 저장합니다.</p>
+     * <p>
+     * Access Token과 Refresh Token을 생성하고,
+     * Refresh Token을 Redis에 저장합니다.
+     * </p>
      * 
      * @param userId 사용자 고유 ID
      * @return TokenResponse
@@ -187,9 +203,6 @@ public class AuthService {
         return new TokenResponse(
                 accessToken,
                 refreshToken,
-                jwtProvider.getAccessTokenExpirationSeconds()
-        );
+                jwtProvider.getAccessTokenExpirationSeconds());
     }
 }
-
-

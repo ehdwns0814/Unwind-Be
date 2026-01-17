@@ -12,6 +12,7 @@
 ## 목적 및 요약
 - **목적**: 안전한 인증 시스템을 구축한다.
 - **요약**: Spring Security 설정(FilterChain), `AuthService`(회원가입/로그인/토큰갱신), `JwtProvider`, `GlobalExceptionHandler` 구현.
+- **관련 요구사항**: [REQ-FUNC-024](file:///Users/dongjun/Documents/workspace/Unwind-Be/docs/SRS.md#L266), [REQ-FUNC-025](file:///Users/dongjun/Documents/workspace/Unwind-Be/docs/SRS.md#L267), [REQ-FUNC-031](file:///Users/dongjun/Documents/workspace/Unwind-Be/docs/SRS.md#L273)
 
 ### 구현 순서 (3-Tier 아키텍처 기반)
 
@@ -27,7 +28,8 @@
 | 6️⃣ | **Exception** | GlobalExceptionHandler | ErrorCode |
 
 ## 관련 스펙
-- **SRS ID**: REQ-FUNC-024, REQ-FUNC-025 (Business Layer)
+- **SRS ID**: REQ-FUNC-024(회원가입), REQ-FUNC-025(로그인), REQ-FUNC-031(토큰갱신)
+- **Test ID**: [TC-041~046](file:///Users/dongjun/Documents/workspace/Unwind-Be/docs/SRS.md#L321)
 - **Component**: Backend Logic
 - **참조 규칙**: 
   - `.cursor/rules/307-api-design-exception-handling.mdc`
@@ -1247,94 +1249,22 @@ com.wombat.screenlock.unwind_be
 
 ## 🧪 테스트
 
-### Unit Test
+### Unit Test (단위 테스트)
 
-#### JwtProviderTest
-```java
-@DisplayName("JwtProvider 테스트")
-class JwtProviderTest {
-    
-    @Test
-    void should_GenerateValidAccessToken() { }
-    
-    @Test
-    void should_GenerateValidRefreshToken() { }
-    
-    @Test
-    void should_ExtractUserIdFromToken() { }
-    
-    @Test
-    void should_ReturnFalse_When_TokenExpired() { }
-    
-    @Test
-    void should_ReturnFalse_When_TokenMalformed() { }
-    
-    @Test
-    void should_ReturnFalse_When_SignatureInvalid() { }
-}
-```
+| Test Case | ID | 대상 컴포넌트 | 테스트 파일 |
+|:---:|:---:|---|---|
+| 회원가입 성공 | **TC-041** | `AuthService` | [AuthServiceTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/application/auth/AuthServiceTest.java) |
+| 회원가입 실패 (중복) | **TC-042** | `AuthService` | [AuthServiceTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/application/auth/AuthServiceTest.java) |
+| 로그인 성공 | **TC-043** | `AuthService` | [AuthServiceTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/application/auth/AuthServiceTest.java) |
+| 로그인 실패 | **TC-044** | `AuthService` | [AuthServiceTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/application/auth/AuthServiceTest.java) |
+| 토큰 갱신 성공 | **TC-045** | `AuthService` | [AuthServiceTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/application/auth/AuthServiceTest.java) |
+| 토큰 갱신 실패 | **TC-046** | `AuthService` | [AuthServiceTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/application/auth/AuthServiceTest.java) |
 
-#### AuthServiceTest
-```java
-@DisplayName("AuthService 테스트")
-@ExtendWith(MockitoExtension.class)
-class AuthServiceTest {
-    
-    @Mock UserRepository userRepository;
-    @Mock RefreshTokenRepository refreshTokenRepository;
-    @Mock PasswordEncoder passwordEncoder;
-    @Mock JwtProvider jwtProvider;
-    @InjectMocks AuthService authService;
-    
-    @Nested
-    @DisplayName("회원가입")
-    class Signup {
-        @Test void should_ReturnToken_When_ValidRequest() { }
-        @Test void should_ThrowA002_When_EmailDuplicated() { }
-    }
-    
-    @Nested
-    @DisplayName("로그인")
-    class Login {
-        @Test void should_ReturnToken_When_ValidCredentials() { }
-        @Test void should_ThrowA001_When_UserNotFound() { }
-        @Test void should_ThrowA001_When_PasswordMismatch() { }
-    }
-    
-    @Nested
-    @DisplayName("토큰 갱신")
-    class Refresh {
-        @Test void should_ReturnNewToken_When_ValidRefreshToken() { }
-        @Test void should_ThrowA003_When_TokenInvalid() { }
-        @Test void should_ThrowA003_When_TokenNotInRedis() { }
-    }
-}
-```
+### Integration Test (통합 테스트)
 
-### Integration Test
-
-#### AuthIntegrationTest
-```java
-@SpringBootTest
-@AutoConfigureMockMvc
-@DisplayName("인증 통합 테스트")
-class AuthIntegrationTest {
-    
-    @Autowired MockMvc mockMvc;
-    
-    @Test
-    void should_SignupAndReturnToken() { }
-    
-    @Test
-    void should_LoginAndReturnToken() { }
-    
-    @Test
-    void should_RefreshToken() { }
-    
-    @Test
-    void should_Return401_When_InvalidCredentials() { }
-}
-```
+| Test Case | 대상 | 테스트 파일 |
+|:---:|---|---|
+| 인증 전체 흐름 | API Endpoints | [AuthIntegrationTest.java](file:///Users/dongjun/Documents/workspace/Unwind-Be/src/test/java/com/wombat/screenlock/unwind_be/api/auth/controller/AuthIntegrationTest.java) |
 
 ---
 
